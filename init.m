@@ -23,7 +23,7 @@ nu0 = [0,0,0,0,0,0]';
 
 %Simulation time
 StartTime="0.0";
-StopTime="1000";
+StopTime="2000";
 
 
 %% CURRENT INPUT
@@ -36,10 +36,10 @@ CurrHead.TimeStart = 300;       %[s] start at which the linear varied heading st
 % current heading given aaccording N-W coodinates from whee the current is
 % flowing. An angle of pi() is added in the code to uniform it with the
 % reference sstem
-CurrHead.HeadStart = 0;         %[rad] initial heading value (alway to be defined, it 
+CurrHead.HeadStart = -pi/4;         %[rad] initial heading value (alway to be defined, it 
                                 % is used also for he case of "consat
                                 % heading"
-CurrHead.HeadEnd = pi/2;          %[rad] final heading value
+CurrHead.HeadEnd = -pi/4;          %[rad] final heading value
 
 
 % Current Heaing Slow variation input
@@ -116,12 +116,12 @@ Kd_yaw = 2*0.7*sqrt(1.0711*10^9+2.724*10^9)*sqrt(Kp_yaw);
 
 
 %% SET-POINTS INPUT
-typeOfSimulation = 1; % 0=constant set-point , 1 sequence of set-points, 2 OPTSIM
+typeOfSimulation = 2; % 0=constant set-point , 1 sequence of set-points, 2 OPTSIM
 
 %if constant set-point
-ConstSPSuge = 10;  %m
-ConstSPSway = 10;  %m
-ConstSPYaw = 3/2*pi;   %rad
+ConstSPSuge = 0;  %m
+ConstSPSway = 0;  %m
+ConstSPYaw = 0;   %rad
 
 % if sequence of set-points
 % Used to tune the controller
@@ -133,7 +133,7 @@ n4 = [0 -50 -pi/4];
 n5 = [0 0 0];
 
 nEnd = [0 0 0];
-TimeStep = 300;       % seconds , time for which the system has to stay  steady
+TimeStep = 400;       % seconds , time for which the system has to stay  steady
                       % it cannot be smaller than 100 seconds
 TimeSteady = 200;     % seconds , time for which the system has to stay  steady
 
@@ -142,7 +142,7 @@ if typeOfSimulation==1
     setPoints = [n0;n1;n2;n3;n4;n5;nEnd];
     timeVector = [0;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep];
 
-    TimeTansition = TimeStep-100;    % seconds , transidition time between one set-point to the next
+    TimeTansition = TimeStep-TimeSteady;    % seconds , transidition time between one set-point to the next
 
 
     % do not change anything from now on
@@ -227,10 +227,12 @@ else
 
 end
 
+%% Kalman filter
+load('initObserverInput.mat')
+
 %% SIMULATION
 
-S = sim('part2_2017a','StartTime',StartTime,'StopTime',StopTime,'SimulationMode','normal');
-%sim('part1')
+S = sim('part2','StartTime',StartTime,'StopTime',StopTime,'SimulationMode','normal');
 SetPointPos = S.get('SetPointPos');
 Eta = S.get('Eta');
 SetPointSpeed = S.get('SetPointSpeed');
@@ -342,7 +344,7 @@ title('Sway')
 legend('\tau_P','\tau_D','\tau_I')
 xlabel('Time [s]')
 ylabel('\tau ')
-linkx(9)=subplot(3,1,3)
+linkx(9)=subplot(3,1,3);
 plot(Tau_Yaw.Time,Tau_Yaw.Data(:,1));
 hold on
 plot(Tau_Yaw.Time,Tau_Yaw.Data(:,2));
