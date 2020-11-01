@@ -24,7 +24,7 @@ nu0 = [0,0,0,0,0,0]';
 
 %Simulation time
 StartTime="0";
-StopTime="1000";
+StopTime="1800";
 
 
 isThusterAllocationUsed = 1;            % 0 =yes, 1 =no
@@ -147,9 +147,9 @@ n3 = [50 -50 -pi/4];
 n4 = [0 -50 -pi/4];
 n5 = [0 0 0];
 
-Tstat =10;
+Tstat =50;
 nEnd = [0 0 0];
-TimeStep = 300;       % seconds , time for which the system has to stay  steady
+TimeStep = 400;       % seconds , time for which the system has to stay  steady
                       % it cannot be smaller than 100 seconds
 TimeSteady = 100;     % seconds , time for which the system has to stay  steady
 
@@ -190,8 +190,8 @@ elseif typeOfSimulation==2
     theta_0 = exp(-10); %Fcn. switching thr.(exp(??13)<=theta_0<=exp(??7)) Example exp(-10)
 
     V_d_tuning_paameter = 1.8;
-    T_a_tuning_paameter = 1/6; %1/8
-    T_d_tuning_paameter = 1/6; %1/8
+    T_a_tuning_paameter = 1/8; %1/8
+    T_d_tuning_paameter = 1/8; %1/8
 
     %%% CONSTUCTION OF REFERENCE MODEL 
 
