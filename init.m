@@ -24,14 +24,14 @@ nu0 = [0,0,0,0,0,0]';
 
 %Simulation time
 StartTime="0";
-StopTime="1500";
+StopTime="1000";
 
 
 isThusterAllocationUsed = 1;            % 0 =yes, 1 =no
 
 %% WAVE INPUT
 
-Significant_wave_height_Hs = 2.5;  %m
+Significant_wave_height_Hs = 0;  %m
 Tp = 9;  %s
 Mean_wave_direction = -pi/4;     %rad  % Wave Angle defined as where the wind is coming from [rad]
 
@@ -39,7 +39,7 @@ Mean_wave_direction = -pi/4;     %rad  % Wave Angle defined as where the wind is
 Peak_frequency_omega_0 = 2*pi/Tp;  %rad/s
 Mean_wave_direction = Mean_wave_direction+pi;
 %% CURRENT INPUT
-Current_Speed = 0.2;              % m/s
+Current_Speed = 0;              % m/s
 Current_input_type = 0;         % 0 = constant heading, 1 = linear varied heading
 Curent_Slaw_var = 1;            % 1 for heading slow variartion, 0 othewise
 
@@ -64,10 +64,10 @@ Current_Head_Seed = 40200;
 
 %% WIND INPUT
 Wind_Heading_type = 1;          % 0 = No Slow variation for Heading, 1 = Slow variation for Heading
-Wind_U_type = 1;                % 0 = No Slow variation for Wind Speed, 1 = Slow variation for Wind Speed
-Wind_Gust_type = 1;             % 0 = No Wind Gust , 1 = Wind Gust
+Wind_U_type = 0;                % 0 = No Slow variation for Wind Speed, 1 = Slow variation for Wind Speed
+Wind_Gust_type = 0;             % 0 = No Wind Gust , 1 = Wind Gust
 
-Wind_U10 = 10;                 % Wind speed at 10 m levation 
+Wind_U10 = 0;                 % Wind speed at 10 m levation 
 Wind_Head_mean = 0;           % Wind Angle defined as where the wind is coming from [rad]
 
 k = 0.003;
@@ -147,10 +147,11 @@ n3 = [50 -50 -pi/4];
 n4 = [0 -50 -pi/4];
 n5 = [0 0 0];
 
+Tstat =10;
 nEnd = [0 0 0];
-TimeStep = 400;       % seconds , time for which the system has to stay  steady
+TimeStep = 300;       % seconds , time for which the system has to stay  steady
                       % it cannot be smaller than 100 seconds
-TimeSteady = 200;     % seconds , time for which the system has to stay  steady
+TimeSteady = 100;     % seconds , time for which the system has to stay  steady
 
 if typeOfSimulation==1
     %%% LINSIM
@@ -185,17 +186,19 @@ elseif typeOfSimulation==2
 
     epsilon_L = 0.05; % Min. frac. of L to be trav. at max. (min.) vel.
     theta_a = 0.90; % Function switching threshold (0.6 <= theta_a < 1) Example 0.90
-    theta_d = 0.15; % Function switching threshold (0 < theta_d <= 0.4) Example 0.15
+    theta_d = 0.90; % Function switching threshold (0 < theta_d <= 0.4) Example 0.15
     theta_0 = exp(-10); %Fcn. switching thr.(exp(??13)<=theta_0<=exp(??7)) Example exp(-10)
 
     V_d_tuning_paameter = 1.8;
-    T_a_tuning_paameter = 1/8;
-    T_d_tuning_paameter = 1/8;
+    T_a_tuning_paameter = 1/6; %1/8
+    T_d_tuning_paameter = 1/6; %1/8
 
     %%% CONSTUCTION OF REFERENCE MODEL 
 
     setPoints = [n0;n1;n2;n3;n4;n5;nEnd];
     timeSetPoints = [0;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep];
+    timeSetPoints = [0;Tstat;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep];
+    
     for j=1:length(timeSetPoints)
         timeVector(j,1)=sum(timeSetPoints(1:j));
     end
