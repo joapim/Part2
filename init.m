@@ -15,6 +15,7 @@ load('supply.mat');
 load('supplyABC.mat');
 load('thrusters_sup.mat')
 
+
 %% INITIAL CONDITION
 % Initial position x, y, z, phi, theta, psi
 eta0 = [0,0,0,0,0,0]';
@@ -22,45 +23,55 @@ eta0 = [0,0,0,0,0,0]';
 nu0 = [0,0,0,0,0,0]';
 
 %Simulation time
-StartTime="0.0";
-StopTime="1000";
+StartTime="0";
+StopTime="400";
 
 
+isThusterAllocationUsed = 1;            % 0 =yes, 1 =no
+
+%% WAVE INPUT
+
+Significant_wave_height_Hs = 0;  %m;   2.5m
+Tp = 0;  %s
+Mean_wave_direction = 0;     %rad  % Wave Angle defined as where the wind is coming from [rad]
+
+% other parameters are hardcoded
+Peak_frequency_omega_0 = 2*pi/Tp;  %rad/s
+Mean_wave_direction = Mean_wave_direction+pi;
 %% CURRENT INPUT
 Current_Speed = 0;              % m/s
 Current_input_type = 0;         % 0 = constant heading, 1 = linear varied heading
-Curent_Slaw_var = 0;            % 1 for heading slow variartion, 0 othewise
+Curent_Slaw_var = 1;            % 1 for heading slow variartion, 0 othewise
 
 CurrHead.Slope = 0.01;          %[rad/s] slop of the linear varied heading
 CurrHead.TimeStart = 300;       %[s] start at which the linear varied heading starts
 % current heading given aaccording N-W coodinates from whee the current is
 % flowing. An angle of pi() is added in the code to uniform it with the
 % reference sstem
-CurrHead.HeadStart = 0;         %[rad] initial heading value (alway to be defined, it 
-                                % is used also for he case of "consat
+CurrHead.HeadStart = pi/2;     %[rad] initial heading value (alway to be defined, it 
+                                % is used also for he case of "constant
                                 % heading"
-CurrHead.HeadEnd = pi/2;          %[rad] final heading value
+CurrHead.HeadEnd = pi/2;       %[rad] final heading value
 
 
 % Current Heaing Slow variation input
 Current_Head_mu = 0.001;
-Current_Head_noise_power = 0.001;
+Current_Head_noise_power = 0.0015*pi/180;
 Current_Head_Sample_time = 1;
-Current_Head_Seed = 30000;
+Current_Head_Seed = 40200;
 
 
 
 %% WIND INPUT
-Wind_Heading_type = 0;          % 0 = No Slow variation for Heading, 1 = Slow variation for Heading
-Wind_U_type = 0;                % 0 = No Slow variation for Wind Speed, 1 = Slow variation for Wind Speed
-Wind_Gust_type = 0;             % 0 = No Wind Gust , 1 = Wind Gust
+Wind_Heading_type = 1;          % 0 = No Slow variation for Heading, 1 = Slow variation for Heading
+Wind_U_type = 1;                % 0 = No Slow variation for Wind Speed, 1 = Slow variation for Wind Speed
+Wind_Gust_type = 1;             % 0 = No Wind Gust , 1 = Wind Gust
 
-Wind_U10 = 0;                  % Wind speed at 10 m levation 
-Wind_Head_mean = pi/2;          % Wind Angle defined as where the wind is coming from [rad]
+Wind_U10 = 0;                 % Wind speed at 10 m levation 
+Wind_Head_mean = 0;           % Wind Angle defined as where the wind is coming from [rad]
 
 k = 0.003;
 z = 10;                         % [m]; wind calculation at a given elevaztion
-
 
 U10 = Wind_U10;
 z0 = 10*exp(-2/(5*sqrt(k)));
@@ -69,9 +80,9 @@ Umean = U10 * 5/2 * sqrt(k) * log(z/z0);
 
 % Wind Heaing Slow variation input
 Wind_Head_mu = 0.001;
-Wind_Head_noise_power = 0.001;
+Wind_Head_noise_power = 0.0015*pi/180;
 Wind_Head_Sample_time = 1;
-Wind_Head_Seed = 30000;
+Wind_Head_Seed = 50100;
 
 
 % Wind Magnitue Slow variation input
@@ -91,24 +102,28 @@ Wind_gust_phi = 2*pi * rand(Wind_gust_nfreq,1);
 
 
 %% CONTROLLER INPUT
-Kp_surge = (2*pi/30)^2*(6.4794^5+6.362*10^6);   % based on natural period of abot 30 seconds from RAOs
+
+Kp_surge = 0.7*(2*pi/30)^2*(6.4794^5+6.362*10^6);   % based on natural period of abot 30 seconds from RAOs
 Ki_surge = 18000;
 Kd_surge = 2*0.7*sqrt(6.4794^5+6.362*10^6)*sqrt(Kp_surge);
+
+Kp_sway = 0.7*(2*pi/20)^2*(2.157*10^6+6.362*10^6);        % based on natural period of 25 seconds from RAOs
+Ki_sway = 80000;
+Kd_sway = 2*0.7*sqrt(2.157*10^6+6.362*10^6)*sqrt(Kp_sway);
+
+Kp_yaw = 0.07*(2*pi/10)^2*(1.0711*10^9+2.724*10^9);    % based on natural period of 10 seconds from RAOs
+Ki_yaw = 1.5*10^5;
+Kd_yaw = 2*0.7*sqrt(1.0711*10^9+2.724*10^9)*sqrt(Kp_yaw);
+
+
 % Kp_surge = 0;   
 % Ki_surge = 0;
 % Kd_surge = 0;
-
-
-Kp_sway = (2*pi/20)^2*(2.157*10^6+6.362*10^6);        % based on natural period of 25 seconds from RAOs
-Ki_sway = 80000;
-Kd_sway = 2*0.7*sqrt(2.157*10^6+6.362*10^6)*sqrt(Kp_sway);
+% 
 % Kp_sway = 0;       
 % Ki_sway = 0;
 % Kd_sway = 0;
-
-Kp_yaw = (2*pi/10)^2*(1.0711*10^9+2.724*10^9);    % based on natural period of 10 seconds from RAOs
-Ki_yaw = 1.5*10^8;
-Kd_yaw = 2*0.7*sqrt(1.0711*10^9+2.724*10^9)*sqrt(Kp_yaw);
+% 
 % Kp_yaw = 0;  
 % Ki_yaw = 0;
 % Kd_yaw = 0;
@@ -116,12 +131,12 @@ Kd_yaw = 2*0.7*sqrt(1.0711*10^9+2.724*10^9)*sqrt(Kp_yaw);
 
 
 %% SET-POINTS INPUT
-typeOfSimulation = 1; % 0=constant set-point , 1 sequence of set-points, 2 OPTSIM
+typeOfSimulation = 2; % 0=constant set-point , 1 sequence of set-points, 2 OPTSIM
 
 %if constant set-point
-ConstSPSuge = 10;  %m
-ConstSPSway = 10;  %m
-ConstSPYaw = 3/2*pi;   %rad
+ConstSPSuge = 0;  %m
+ConstSPSway = 0;  %m
+ConstSPYaw = 0;   %rad
 
 % if sequence of set-points
 % Used to tune the controller
@@ -132,17 +147,18 @@ n3 = [50 -50 -pi/4];
 n4 = [0 -50 -pi/4];
 n5 = [0 0 0];
 
+Tstat =50;
 nEnd = [0 0 0];
-TimeStep = 300;       % seconds , time for which the system has to stay  steady
+TimeStep = 400;       % seconds , time for which the system has to stay  steady
                       % it cannot be smaller than 100 seconds
-TimeSteady = 200;     % seconds , time for which the system has to stay  steady
+TimeSteady = 100;     % seconds , time for which the system has to stay  steady
 
 if typeOfSimulation==1
     %%% LINSIM
     setPoints = [n0;n1;n2;n3;n4;n5;nEnd];
     timeVector = [0;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep];
 
-    TimeTansition = TimeStep-100;    % seconds , transidition time between one set-point to the next
+    TimeTansition = TimeStep-TimeSteady;    % seconds , transidition time between one set-point to the next
 
 
     % do not change anything from now on
@@ -174,13 +190,15 @@ elseif typeOfSimulation==2
     theta_0 = exp(-10); %Fcn. switching thr.(exp(??13)<=theta_0<=exp(??7)) Example exp(-10)
 
     V_d_tuning_paameter = 1.8;
-    T_a_tuning_paameter = 1/8;
-    T_d_tuning_paameter = 1/8;
+    T_a_tuning_paameter = 1/8; %1/8
+    T_d_tuning_paameter = 1/8; %1/8
 
     %%% CONSTUCTION OF REFERENCE MODEL 
 
     setPoints = [n0;n1;n2;n3;n4;n5;nEnd];
     timeSetPoints = [0;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep];
+    timeSetPoints = [0;Tstat;TimeStep;TimeStep;TimeStep;TimeStep;TimeStep];
+    
     for j=1:length(timeSetPoints)
         timeVector(j,1)=sum(timeSetPoints(1:j));
     end
@@ -224,100 +242,149 @@ else
     SwaySP = [0 0];
     YawSP = [0 0];
 
-
 end
+
+%% Kalman filter
+
+load('initEKF.mat')
 
 %% SIMULATION
 
-S = sim('part2_2017a','StartTime',StartTime,'StopTime',StopTime,'SimulationMode','normal');
-%sim('part1')
+tic
+
+%S = sim('part2_sim4_nonLinear','StartTime',StartTime,'StopTime',StopTime,'SimulationMode','normal');
+S = sim('part2','StartTime',StartTime,'StopTime',StopTime,'SimulationMode','normal');
+
 SetPointPos = S.get('SetPointPos');
-Eta = S.get('Eta');
+Eta_NED = S.get('Eta_NED');
+Eta_BF = S.get('Eta_BF');
 SetPointSpeed = S.get('SetPointSpeed');
-Nu = S.get('Nu');
+SetPointSpeed_BF = S.get('SetPointSpeed_BF');
+Nu_NED = S.get('Nu_NED');
+Nu_BF = S.get('Nu_BF');
 Tau_Surge = S.get('Tau_Surge');
 Tau_Sway = S.get('Tau_Sway');
 Tau_Yaw = S.get('Tau_Yaw');
+nu_hat_NED = S.get('nu_hat_NED');
+nu_hat_BF = S.get('nu_hat_BF');
+eta_hat_NED = S.get('eta_hat_NED');
+
+Current_Heading_BF = S.get('Current_Heading_BF'); % current gien where it is pointing at in BF ref system
 Wind_Speed = S.get('Wind_Speed');
-Wind_Headind_EF = S.get('Wind_Headind_EF');
+Wind_Headind_alphaRef = S.get('Wind_Headind_alphaRef'); % wind gien where it is pointing at in alphaREF ref system
+Wind_Headind_BF = S.get('Wind_Headind_BF'); % wind gien where it is pointing at in BF ref system
 Wind_Force = S.get('Wind_Force');
+Current_Heading_NED = S.get('Current_Heading_NED'); % current gien where it is pointing at in BF ref system
+Wind_Headind_NED = S.get('Wind_Headind_NED'); % wind gien where it is pointing at in BF ref system
+
+u_output = S.get('u_output');
+alpha_output = S.get('alpha_output');
+Tau = S.get('Tau');
+Tau_controller = S.get('Tau_controller');
+
+
+toc
 
 %% Plot results
 
 figure()
 linkx(1)=subplot(3,1,1)
-plot(SetPointPos.Time,SetPointPos.Data(:,1))
+plot(eta_hat_NED.Time,eta_hat_NED.Data(:,1))
 hold on
-plot(Eta.Time,Eta.Data(:,1))
+plot(Eta_NED.Time,Eta_NED.Data(:,1))
+plot(SetPointPos.Time,SetPointPos.Data(:,1))
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('X_E [m]')
-legend('Set-point','Vessel')
-title('Vessel position - Earth reference frame')
+legend('Estimated pos.','Real pos.','Set-point')
+title('Vessel position - Earth reference frame (NED)')
 linkx(2)=subplot(3,1,2)
-plot(SetPointPos.Time,SetPointPos.Data(:,2))
+plot(eta_hat_NED.Time,eta_hat_NED.Data(:,2))
 hold on
-plot(Eta.Time,Eta.Data(:,2))
+plot(Eta_NED.Time,Eta_NED.Data(:,2))
+plot(SetPointPos.Time,SetPointPos.Data(:,2))
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('Y_E [m]')
-legend('Set-point','Vessel')
+legend('Estimated pos.','Real pos.','Set-point')
 linkx(3)=subplot(3,1,3)
-plot(SetPointPos.Time,SetPointPos.Data(:,3))
+plot(eta_hat_NED.Time,eta_hat_NED.Data(:,3))
 hold on
-plot(Eta.Time,Eta.Data(:,3))
+plot(Eta_NED.Time,Eta_NED.Data(:,3))
+plot(SetPointPos.Time,SetPointPos.Data(:,3))
 hold off
 grid on
-legend('Set-point','Vessel')
+legend('Estimated pos.','Real pos.','Set-point')
 xlabel('Time [s]')
 ylabel('Heading [rad]')
 
 figure()
 linkx(4)=subplot(3,1,1)
-plot(SetPointSpeed.Time,SetPointSpeed.Data(:,1))
+plot(nu_hat_NED.Time,nu_hat_NED.Data(:,1))
 hold on
-plot(Nu.Time,Nu.Data(:,1))
+plot(Nu_NED.Time,Nu_NED.Data(:,1))
+plot(SetPointSpeed.Time,SetPointSpeed.Data(:,1))
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('Surge velocity [m/s]')
-legend('Set-point','Vessel')
-title('Vessel velocities - Earth reference frame')
+legend('Estimated velocity','Real velocity','Set-point velocity')
+title('Vessel velocities - Earth reference frame (NED)')
 linkx(5)=subplot(3,1,2)
-plot(SetPointSpeed.Time,SetPointSpeed.Data(:,2))
+plot(nu_hat_NED.Time,nu_hat_NED.Data(:,2))
 hold on
-plot(Nu.Time,Nu.Data(:,2))
+plot(Nu_NED.Time,Nu_NED.Data(:,2))
+plot(SetPointSpeed.Time,SetPointSpeed.Data(:,2))
 hold off
 grid on
 xlabel('Time [s]')
 ylabel('Sway velocity [m/s]')
-legend('Set-point','Vessel')
+legend('Estimated velocity','Real velocity','Set-point velocity')
 linkx(6)=subplot(3,1,3)
-plot(SetPointSpeed.Time,SetPointSpeed.Data(:,3))
+plot(nu_hat_NED.Time,nu_hat_NED.Data(:,3))
 hold on
-plot(Nu.Time,Nu.Data(:,3))
+plot(Nu_NED.Time,Nu_NED.Data(:,3))
+plot(SetPointSpeed.Time,SetPointSpeed.Data(:,3))
 hold off
 grid on
-legend('Set-point','Vessel')
+legend('Estimated velocity','Real velocity','Set-point velocity')
 xlabel('Time [s]')
 ylabel('Yaw rate [rad/s]')
 
-
 figure()
-plot(SetPointPos.Data(:,2),SetPointPos.Data(:,1));
+linkx(10)=subplot(3,1,1)
+plot(nu_hat_BF.Time,nu_hat_BF.Data(:,1))
 hold on
-plot(Eta.Data(:,2),Eta.Data(:,1))
-%plot(Eta.Data(:,1),Eta.Data(:,2))
+plot(Nu_BF.Time,Nu_BF.Data(:,1))
+plot(SetPointSpeed_BF.Time,SetPointSpeed_BF.Data(:,1))
 hold off
 grid on
-legend('Set-point','Vessel')
-ylabel('X_E [m] Earth reference frame')
-xlabel('Y_E [m] Earth reference frame')
-% xlim([min(SetPointPos.Data(:,1))-abs(max(SetPointPos.Data(:,1))*0.3) max(SetPointPos.Data(:,1))+abs(max(SetPointPos.Data(:,1))*0.3)])
-% ylim([min(SetPointPos.Data(:,2))-abs(max(SetPointPos.Data(:,2))*0.3) max(SetPointPos.Data(:,2))+abs(max(SetPointPos.Data(:,2))*0.3)])
-axis equal
+xlabel('Time [s]')
+ylabel('Surge velocity [m/s]')
+legend('Estimated velocity','Real velocity','Set-point velocity')
+title('Vessel velocities - Body reference frame ')
+linkx(11)=subplot(3,1,2)
+plot(nu_hat_BF.Time,nu_hat_BF.Data(:,2))
+hold on
+plot(Nu_BF.Time,Nu_BF.Data(:,2))
+plot(SetPointSpeed_BF.Time,SetPointSpeed_BF.Data(:,2))
+hold off
+grid on
+xlabel('Time [s]')
+ylabel('Sway velocity [m/s]')
+legend('Estimated velocity','Real velocity','Set-point velocity')
+linkx(12)=subplot(3,1,3)
+plot(nu_hat_BF.Time,nu_hat_BF.Data(:,3))
+hold on
+plot(Nu_BF.Time,Nu_BF.Data(:,3))
+plot(SetPointSpeed_BF.Time,SetPointSpeed_BF.Data(:,3))
+hold off
+grid on
+legend('Estimated velocity','Real velocity','Set-point velocity')
+xlabel('Time [s]')
+ylabel('Yaw rate [rad/s]')
 
 figure()
 linkx(7)=subplot(3,1,1)
@@ -358,23 +425,66 @@ ylabel('\tau ')
 
 
 
+figure()
+plot(SetPointPos.Data(:,2),SetPointPos.Data(:,1));
+hold on
+plot(Eta_NED.Data(:,2),Eta_NED.Data(:,1))
+%plot(Eta.Data(:,1),Eta.Data(:,2))
+hold off
+grid on
+legend('Set-point','Vessel')
+ylabel('X_E [m] Earth reference frame')
+xlabel('Y_E [m] Earth reference frame')
+% xlim([min(SetPointPos.Data(:,1))-abs(max(SetPointPos.Data(:,1))*0.3) max(SetPointPos.Data(:,1))+abs(max(SetPointPos.Data(:,1))*0.3)])
+% ylim([min(SetPointPos.Data(:,2))-abs(max(SetPointPos.Data(:,2))*0.3) max(SetPointPos.Data(:,2))+abs(max(SetPointPos.Data(:,2))*0.3)])
+axis equal
 
 figure()
-linkx(10)=subplot(2,5,1:3)
+linkx(10)=subplot(2,1,1)
 plot(Wind_Speed.Time,Wind_Speed.Data(:,1));
 title('Wind Magnitude ')
+legend('Wind Magnitude ')
 xlabel('Time [s]')
 ylabel('U_w [m/s] ')
 grid on
-linkx(11)=subplot(2,5,6:8)
-plot(Wind_Headind_EF.Time,Wind_Headind_EF.Data(:,1)*180/pi);
-title('Angle \alpha')
+linkx(11)=subplot(2,1,2)
+plot(Wind_Headind_alphaRef.Time,Wind_Headind_alphaRef.Data(:,1)*180/pi);
+title('Wind Angle \alpha')
 xlabel('Time [s]')
 ylabel('Angle \alpha [deg] ')
 grid on
-subplot(2,5,[4,5,9,10])
-h=polar(Wind_Headind_EF.Data(:,1),Wind_Speed.Data(:,1));
-title('Wind magnitude - angle \alpha [deg]');
+
+figure()
+linkx(10)=subplot(3,1,1)
+plot(Wind_Speed.Time,Wind_Speed.Data(:,1));
+hold on
+plot(Wind_Speed.Time,Current_Speed*ones(length(Current_Heading_NED.Time),1));
+hold off
+title('Wind & Current Magnitude')
+legend('Wind Magnitude ','Current Magnitude ')
+xlabel('Time [s]')
+ylabel('U_w [m/s] ')
+grid on
+linkx(11)=subplot(3,1,2)
+plot(Wind_Headind_NED.Time,Wind_Headind_NED.Data(:,1)*180/pi);
+hold on
+plot(Current_Heading_NED.Time,Current_Heading_NED.Data(:,1)*180/pi);
+hold off
+title('Wind & Current Heading (NED)')
+xlabel('Time [s]')
+ylabel('Heading [deg] ')
+grid on
+linkx(11)=subplot(3,1,3)
+plot(Wind_Headind_BF.Time,Wind_Headind_BF.Data(:,1)*180/pi);
+hold on
+plot(Current_Heading_BF.Time,Current_Heading_BF.Data(:,1)*180/pi);
+hold off
+title('Wind & Current Heading (Body Fixed)')
+xlabel('Time [s]')
+ylabel('Heading [deg] ')
+grid on
+
+
 
 
 figure()
@@ -417,8 +527,79 @@ grid on
 
 
 
+%plot thust consumption
 
-linkaxes(linkx,'x');
+Thuster_thrust_lim = [125 150 150 320 320]*1000;
+
+Thuster_tot_thrust = sum(Thuster_thrust_lim);
+
+uAbs = abs(u_output.Data);
+u_tot=sum(uAbs(:,1:end)');
+figure()
+plot(u_output.Time,u_tot/Thuster_tot_thrust*100);
+hold on
+plot([u_output.Time(1),u_output.Time(end)],[100,100],'k','Linewidth',2)
+hold off
+legend('Thrust usage','Limit')
+title('Thrust usage')
+xlabel('Time [s]')
+ylabel('Thrust usage [%] ')
+grid on
+
+% Thrusters
+for gg = 1:1:5
+    figure()
+    thusterNumbr = gg;
+    subplot(2,1,1)
+    plot(alpha_output.Time,alpha_output.Data(:,thusterNumbr)*180/pi)
+    title(['Thruster ' num2str(thusterNumbr)])
+    ylabel('Azimuthing angle [deg]')
+    xlabel('Time [sec]')
+    grid on
+    subplot(2,1,2)
+    plot(u_output.Time,u_output.Data(:,thusterNumbr)/1000)
+    hold on
+    plot([u_output.Time(1) u_output.Time(end)],[Thuster_thrust_lim(thusterNumbr) Thuster_thrust_lim(thusterNumbr)]/1000,'k','Linewidth',2)
+    ylabel('Thrust [kN]')
+    xlabel('Time [sec]')
+    legend({'Total Thrust','Thrust limit'});
+    grid on
+end
+
+figure()
+subplot(3,1,1)
+hold on
+for gg = 1:1:5
+    thusterNumbr = gg;
+    plot(alpha_output.Time,alpha_output.Data(:,thusterNumbr)*180/pi)
+end
+hold off
+ylabel('Azimuthing angle [deg]')
+xlabel('Time [sec]')
+grid on
+legend({'Thruster 1','Thruster 2','Thruster 3','Thruster 4','Thruster 5'},'Location','Eastoutside');
+subplot(3,1,2)
+hold on
+for gg = 1:1:5
+    thusterNumbr = gg;
+    plot(u_output.Time,u_output.Data(:,thusterNumbr)/1000)
+end
+hold off
+ylabel('Thrust [kN]')
+xlabel('Time [sec]')
+grid on
+legend({'Thruster 1','Thruster 2','Thruster 3','Thruster 4','Thruster 5'},'Location','Eastoutside');
+subplot(3,1,3)
+plot(u_output.Time,u_tot/1000);
+hold on
+plot([u_output.Time(1) u_output.Time(end)],[Thuster_tot_thrust Thuster_tot_thrust]/1000,'k','Linewidth',2)
+hold off
+ylabel('Thrust [kN]')
+xlabel('Time [sec]')
+grid on
+legend({'Total Thrust','Thrust limit'},'Location','Eastoutside');
+
+
 
 
 
