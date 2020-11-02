@@ -3,7 +3,7 @@
 %                                                                         %              
 % Set initial parameters for part1.slx and part2.slx                      %
 %                                                                         %
-% Created:      2018.07.12	Jon Bjørnø  
+% Created:      2018.07.12	Jon Bjï¿½rnï¿½  
 % Modified:     2020.10.01  Group 1
 %                                                                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -24,7 +24,7 @@ nu0 = [0,0,0,0,0,0]';
 
 %Simulation time
 StartTime="0";
-StopTime="400";
+StopTime="800";
 
 
 isThusterAllocationUsed = 1;            % 0 =yes, 1 =no
@@ -32,8 +32,8 @@ isThusterAllocationUsed = 1;            % 0 =yes, 1 =no
 %% WAVE INPUT
 
 Significant_wave_height_Hs = 0;  %m;   2.5m
-Tp = 0;  %s
-Mean_wave_direction = 0;     %rad  % Wave Angle defined as where the wind is coming from [rad]
+Tp = 9;  %s
+Mean_wave_direction = pi/4;     %rad  % Wave Angle defined as where the wind is coming from [rad]
 
 % other parameters are hardcoded
 Peak_frequency_omega_0 = 2*pi/Tp;  %rad/s
@@ -67,7 +67,7 @@ Wind_Heading_type = 1;          % 0 = No Slow variation for Heading, 1 = Slow va
 Wind_U_type = 1;                % 0 = No Slow variation for Wind Speed, 1 = Slow variation for Wind Speed
 Wind_Gust_type = 1;             % 0 = No Wind Gust , 1 = Wind Gust
 
-Wind_U10 = 0;                 % Wind speed at 10 m levation 
+Wind_U10 = 10;                 % Wind speed at 10 m levation 
 Wind_Head_mean = 0;           % Wind Angle defined as where the wind is coming from [rad]
 
 k = 0.003;
@@ -99,6 +99,40 @@ Wind_gust_k = 0.0026;
 
 Wind_gust_phi = 2*pi * rand(Wind_gust_nfreq,1);
 
+%% NONLINEAR PASSIVE OBSERVER
+M = [6.8177e6  0             0;   %Mass Matrix (Rigid body + Added mass)
+     0      7.8784e6     -2.5955e6;
+     0         0          3.57e9;];
+    
+M_inv = inv(M);
+
+
+D = [2.6486e5    0       0; %Damping matrix
+     0        8.8164e5   0;
+     0           0    3.3774e8;
+    ];                                 %/10;
+
+cutOffFreq = 0.8378; %cut-off frec
+
+omega_obs = diag([0.698 0.698 0.698]);
+delta_obs = diag([0.1 0.1 0.1]);
+A_w = [zeros(3) eye(3);
+        -omega_obs^2 -2*delta_obs*omega_obs];
+C_w = [zeros(3) eye(3)];
+
+zeta_ni = 1.0;
+zeta_i = 0.1;
+
+K1 = [diag([-2*(zeta_ni-zeta_i)*cutOffFreq/omega_obs(1,1) 
+    -2*(zeta_ni-zeta_i)*cutOffFreq/omega_obs(2,2) 
+    -2*(zeta_ni-zeta_i)*cutOffFreq/omega_obs(3,3)])
+    diag([2*omega_obs(1,1)*(zeta_ni-zeta_i)
+    2*omega_obs(2,2)*(zeta_ni-zeta_i)
+    2*omega_obs(3,3)*(zeta_ni-zeta_i)])];
+% filter gains
+K2 = diag([cutOffFreq cutOffFreq cutOffFreq]);
+K4 = 0.01*diag([M(1,1),M(2,2),M(3,3)]);
+K3 = 0.1*K4;
 
 
 %% CONTROLLER INPUT
@@ -141,7 +175,7 @@ ConstSPYaw = 0;   %rad
 % if sequence of set-points
 % Used to tune the controller
 n0 = [0 0 0];
-n1 = [50 0 0];
+n1 = [0 0 0];
 n2 = [50 -50 0];
 n3 = [50 -50 -pi/4];
 n4 = [0 -50 -pi/4];
